@@ -49,9 +49,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_519ABCD856BF494CBDF33F2499685C57 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B05D028DC5BB47AE9E6254EF70723F35 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_7D480EA188734E648C0A57565F2EC730 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
@@ -60,4 +60,5 @@ jobs:
           app-name: 'lakeside-hotel-online'
           slot-name: 'Production'
           package: '*.jar'
+
           
