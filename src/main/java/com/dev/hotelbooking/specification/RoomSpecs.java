@@ -21,7 +21,7 @@ public class RoomSpecs {
 
     public static Specification<Room> fieldContains(String fieldName, String value) {
         return (root, query, cb) ->
-                cb.like(root.get(fieldName), "%" + value.toLowerCase() + "%");
+                cb.like(cb.lower(root.get(fieldName)), "%" + value.toLowerCase() + "%");
     }
 
     public static Specification<Room> priceGreaterThan(String fieldName, BigDecimal minPrice) {
