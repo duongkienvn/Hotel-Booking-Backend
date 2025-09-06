@@ -5,9 +5,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.hibernate.annotations.JdbcTypeCode;
 
 import java.math.BigDecimal;
-import java.sql.Blob;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,7 +32,9 @@ public class Room {
     private boolean isBooked = false;
 
     @Lob
-    private Blob photo;
+    @JdbcTypeCode(Types.BINARY)
+    @Column(columnDefinition = "BYTEA")
+    private byte[] photo;
 
     @OneToMany(mappedBy = "room", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<BookedRoom> bookings;

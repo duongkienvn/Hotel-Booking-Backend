@@ -2,14 +2,15 @@ package com.dev.hotelbooking.service.impl;
 
 import com.dev.hotelbooking.dto.response.BookingResponse;
 import com.dev.hotelbooking.dto.response.RoomResponse;
-import com.dev.hotelbooking.exception.AppException;
 import com.dev.hotelbooking.enums.ErrorCode;
+import com.dev.hotelbooking.exception.AppException;
 import com.dev.hotelbooking.model.BookedRoom;
 import com.dev.hotelbooking.model.Room;
 import com.dev.hotelbooking.repository.BookingRepository;
 import com.dev.hotelbooking.repository.RoomRepository;
 import com.dev.hotelbooking.service.IRoomService;
 import com.dev.hotelbooking.specification.RoomSpecs;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,16 +18,15 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.sql.Blob;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class RoomService implements IRoomService {
     private final RoomRepository roomRepository;
     private final BookingRepository bookingRepository;
@@ -38,10 +38,11 @@ public class RoomService implements IRoomService {
         room.setRoomPrice(roomPrice);
         if (!file.isEmpty()) {
             byte[] photoBytes = file.getBytes();
-            Blob photoBlob = new SerialBlob(photoBytes);
-            room.setPhoto(photoBlob);
+            room.setPhoto(photoBytes);
         }
-        return roomRepository.save(room);
+        Room newRoom = roomRepository.save(room);
+
+        return newRoom;
     }
 
     @Override
@@ -54,12 +55,7 @@ public class RoomService implements IRoomService {
         Page<Room> rooms = roomRepository.findAll(pageable);
 
         return rooms.map(room -> {
-            byte[] photoBytes = null;
-            try {
-                photoBytes = getRoomPhotoByRoomId(room.getId());
-            } catch (SQLException e) {
-                throw new AppException(ErrorCode.PHOTO_RETRIEVAL, "Error retrieving photo for room " + room.getId());
-            }
+            byte[] photoBytes = getRoomPhotoByRoomId(room.getId());
 
             RoomResponse roomResponse = getRoomResponse(room);
 
@@ -72,11 +68,11 @@ public class RoomService implements IRoomService {
         });
     }
 
-    private byte[] getRoomPhotoByRoomId(Long roomId) throws SQLException {
+    private byte[] getRoomPhotoByRoomId(Long roomId) {
         Room room = getRoomById(roomId);
-        Blob photoBlob = room.getPhoto();
-        if (photoBlob != null) {
-            return photoBlob.getBytes(1, (int) photoBlob.length());
+        byte[] photoBytes = room.getPhoto();
+        if (photoBytes != null) {
+            return photoBytes;
         }
         return new byte[0];
     }
@@ -88,14 +84,9 @@ public class RoomService implements IRoomService {
                 .map(booking -> new BookingResponse(booking.getBookingId(),
                         booking.getCheckInDate(),
                         booking.getCheckOutDate(), booking.getBookingConfirmationCode())).toList();
-        byte[] photoBytes = null;
-        Blob photoBlob = room.getPhoto();
-        if (photoBlob != null) {
-            try {
-                photoBytes = photoBlob.getBytes(1, (int) photoBlob.length());
-            } catch (SQLException e) {
-                throw new AppException(ErrorCode.PHOTO_RETRIEVAL);
-            }
+        byte[] photoBytes = room.getPhoto();
+        if (photoBytes == null) {
+            throw new AppException(ErrorCode.PHOTO_RETRIEVAL);
         }
         return new RoomResponse(room.getId(),
                 room.getRoomType(), room.getRoomPrice(),
@@ -115,8 +106,7 @@ public class RoomService implements IRoomService {
         if (roomType != null) room.setRoomType(roomType);
         if (roomPrice != null) room.setRoomPrice(roomPrice);
         byte[] photoBytes = photo != null && !photo.isEmpty() ? photo.getBytes() : getRoomPhotoByRoomId(roomId);
-        Blob photoBlob = photoBytes != null && photoBytes.length > 0 ? new SerialBlob(photoBytes) : null;
-        room.setPhoto(photoBlob);
+        room.setPhoto(photoBytes);
         Room savedRoom = roomRepository.save(room);
         return getRoomResponse(savedRoom);
     }
@@ -140,14 +130,12 @@ public class RoomService implements IRoomService {
     public List<RoomResponse> getAvailableRooms(LocalDate checkInDate, LocalDate checkOutDate, String roomType) throws SQLException {
         List<Room> availableRooms = roomRepository.findAvailableRoomsByDatesAndType(checkInDate, checkOutDate, roomType);
         List<RoomResponse> roomResponses = new ArrayList<>();
-        for (Room room : availableRooms){
+        for (Room room : availableRooms) {
             byte[] photoBytes = getRoomPhotoByRoomId(room.getId());
-            if (photoBytes != null && photoBytes.length > 0){
-                String photoBase64 = Base64.getEncoder().encodeToString(photoBytes);
-                RoomResponse roomResponse = getRoomResponse(room);
-                roomResponse.setPhoto(photoBase64);
-                roomResponses.add(roomResponse);
-            }
+            String photoBase64 = Base64.getEncoder().encodeToString(photoBytes);
+            RoomResponse roomResponse = getRoomResponse(room);
+            roomResponse.setPhoto(photoBase64);
+            roomResponses.add(roomResponse);
         }
 
         return roomResponses;

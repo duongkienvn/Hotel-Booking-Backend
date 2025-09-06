@@ -4,7 +4,6 @@ import com.dev.hotelbooking.model.User;
 import com.dev.hotelbooking.security.jwt.JwtService;
 import com.dev.hotelbooking.service.IOAuthUserService;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +15,8 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Component
 @RequiredArgsConstructor
@@ -31,13 +32,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         User user = oauthUserService.getUser(oAuth2User);
         String token = jwtService.generateJwtToken(user);
-        Cookie cookie = new Cookie("token", token);
-        cookie.setHttpOnly(false);
-        cookie.setSecure(false);
-        cookie.setDomain("localhost");
-        cookie.setMaxAge(3600);
-        cookie.setPath("/");
-        response.addCookie(cookie);
-        response.sendRedirect(frontendUrl);
+        String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
+        response.sendRedirect(frontendUrl + "?token=" + encodedToken);
     }
 }
