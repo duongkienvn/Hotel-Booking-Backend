@@ -33,8 +33,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         String token = jwtService.generateJwtToken(user);
         Cookie cookie = new Cookie("token", token);
         cookie.setHttpOnly(false);
-        cookie.setSecure(false);
-        cookie.setDomain("localhost");
+        cookie.setSecure(true);
         cookie.setMaxAge(3600);
         cookie.setPath("/");
         response.addCookie(cookie);
