@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -21,6 +22,8 @@ import java.io.IOException;
 public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler {
     private final JwtService jwtService;
     private final IOAuthUserService oauthUserService;
+    @Value("${frontend.url}")
+    private String frontendUrl;
 
     @SneakyThrows
     @Override
@@ -34,6 +37,6 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         cookie.setMaxAge(3600);
         cookie.setPath("/");
         response.addCookie(cookie);
-        response.sendRedirect("http://localhost:5173");
+        response.sendRedirect(frontendUrl);
     }
 }
