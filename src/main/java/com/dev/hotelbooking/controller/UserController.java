@@ -52,6 +52,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/avatar")
+    @PreAuthorize("(hasRole('USER') or hasRole('ADMIN')) and #id == @userService.getUser(authentication.name).id")
     public ResponseEntity<String> uploadAvatar(@PathVariable Long id,
                                                @RequestParam("photo") MultipartFile photo) {
         String avatarUrl = userService.uploadAvatar(id, photo);
